@@ -95,6 +95,11 @@ RETRY:
 	// the item has been updated
 	txnResp := updateResp.Responses[0].GetResponseTxn()
 	if !txnResp.Succeeded {
+		_, latestRev, err := doGetWithRev(ctx, client, key)
+		if err != nil {
+			return err
+		}
+		rev = latestRev
 		goto RETRY
 	}
 	return nil
