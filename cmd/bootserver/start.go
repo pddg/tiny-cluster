@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-    "os"
-    "log"
+	"log"
+	"os"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/spf13/cobra"
 
 	"github.com/pddg/tiny-cluster/pkg/boot"
@@ -21,9 +21,9 @@ func newStartCommand() *cobra.Command {
 		Use:   "start",
 		Short: "Start server",
 		Run: func(cmd *cobra.Command, args []string) {
-            if _, err := os.Stat(bootFileDir); err != nil {
-                log.Fatalf("%s does not exist.", bootFileDir)
-            }
+			if _, err := os.Stat(bootFileDir); err != nil {
+				log.Fatalf("%s does not exist.", bootFileDir)
+			}
 			e := echo.New()
 
 			e.Use(middleware.Logger())
