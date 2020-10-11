@@ -12,8 +12,6 @@ type MachineSpec struct {
 
 // Machine is a information of phisical host
 type Machine struct {
-	// ID is a unique index of this host.
-	ID string
 	// MAC is Media Access Control address of this host
 	MAC string
 	// Name is a friendly name.
