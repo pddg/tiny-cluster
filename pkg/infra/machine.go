@@ -11,7 +11,7 @@ import (
 	"go.etcd.io/etcd/clientv3"
 )
 
-var machinePrefix = path.Join(BASE_PREFIX, "machines/v1")
+var machinePrefix = path.Join(BasePrefix, "machines/v1")
 
 type machineRepoImpl struct {
 	*baseRepoImpl
@@ -28,16 +28,16 @@ func (m *machineRepoImpl) GetMachines(ctx context.Context) ([]*models.Machine, e
 		return nil, err
 	}
 	defer client.Close()
-	resp, err := client.Get(ctx, machinePrefix, clientv3.WithPrefix())
+	allValues, err := doGetAll(ctx, client, machinePrefix)
 	if err != nil {
-		return nil, err
+		return machines, err
 	}
-	for _, kv := range resp.Kvs {
-		m := new(models.Machine)
-		if err := json.Unmarshal(kv.Value, m); err != nil {
+	for _, v := range allValues {
+		machine := new(models.Machine)
+		if err := json.Unmarshal(v, machine); err != nil {
 			return nil, err
 		}
-		machines = append(machines, m)
+		machines = append(machines, machine)
 	}
 	return machines, nil
 }

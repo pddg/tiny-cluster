@@ -2,15 +2,15 @@ package infra
 
 import (
 	"context"
-	"fmt"
 
 	"go.etcd.io/etcd/clientv3"
 	"golang.org/x/xerrors"
 )
 
-const BASE_PREFIX = "/tiny-cluster"
+const BasePrefix = "/tiny-cluster"
 
 var (
+	ErrTimedOut      = xerrors.New("Operation timed out")
 	ErrNotFound      = xerrors.New("The item was not found")
 	ErrAlreadyExists = xerrors.New("The item has already been exist")
 )
@@ -27,7 +27,7 @@ func (r *baseRepoImpl) newClient(ctx context.Context) (*clientv3.Client, error) 
 	go func() {
 		client, err := clientv3.New(*r.config)
 		if err != nil {
-			errCh <- err
+			errCh <- xerrors.Errorf("Failed to create etcd client %w:", err)
 		} else {
 			clientCh <- client
 		}
@@ -36,28 +36,46 @@ func (r *baseRepoImpl) newClient(ctx context.Context) (*clientv3.Client, error) 
 	}()
 	select {
 	case <-timeoutCtx.Done():
-		return nil, fmt.Errorf("Connection timed out")
+		return nil, ErrTimedOut
 	case err := <-errCh:
-		return nil, err
+		return nil, xerrors.Errorf("Could not create etcd client %w:", err)
 	case client := <-clientCh:
 		return client, nil
 	}
 }
 
-func doGetWithRev(ctx context.Context, client *clientv3.Client, key string, opts ...clientv3.OpOption) (string, int64, error) {
+func doGetWithRev(ctx context.Context, client *clientv3.Client, key string, opts ...clientv3.OpOption) ([]byte, int64, error) {
+	var value []byte
 	resp, err := client.Get(ctx, key, opts...)
 	if err != nil {
-		return "", 0, err
+		return value, 0, xerrors.Errorf("Failed to get the key ('%s') %w:", key, err)
 	}
 	if resp.Count == 0 {
-		return "", 0, ErrNotFound
+		return value, 0, ErrNotFound
 	}
-	return string(resp.Kvs[0].Value), resp.Kvs[0].ModRevision, nil
+	value = resp.Kvs[0].Value
+	return value, resp.Kvs[0].ModRevision, nil
 }
 
-func doGet(ctx context.Context, client *clientv3.Client, key string, opts ...clientv3.OpOption) (string, error) {
+func doGet(ctx context.Context, client *clientv3.Client, key string, opts ...clientv3.OpOption) ([]byte, error) {
 	value, _, err := doGetWithRev(ctx, client, key, opts...)
 	return value, err
+}
+
+func doGetAll(ctx context.Context, client *clientv3.Client, key string, opts ...clientv3.OpOption) ([][]byte, error) {
+	var values [][]byte
+	opts = append(opts, clientv3.WithPrefix())
+	resp, err := client.Get(ctx, key, opts...)
+	if err != nil {
+		return values, xerrors.Errorf("Failed to get the values whose key starts with '%s' %w:", key, err)
+	}
+	for _, kv := range resp.Kvs {
+		if kv.Version == 0 {
+			continue
+		}
+		values = append(values, kv.Value)
+	}
+	return values, nil
 }
 
 func doCreate(ctx context.Context, client *clientv3.Client, key string, value string) error {
@@ -68,7 +86,7 @@ func doCreate(ctx context.Context, client *clientv3.Client, key string, value st
 		Then(create).
 		Commit()
 	if err != nil {
-		return err
+		return xerrors.Errorf("etcd client operation error %w:", err)
 	}
 	if !createResp.Succeeded {
 		return ErrAlreadyExists
@@ -87,7 +105,7 @@ RETRY:
 		Then(updateItem).
 		Commit()
 	if err != nil {
-		return err
+		return xerrors.Errorf("etcd client operation error %w:", err)
 	}
 	if !updateResp.Succeeded {
 		return ErrNotFound
@@ -113,7 +131,7 @@ func doDelete(ctx context.Context, client *clientv3.Client, key string) error {
 		Then(deleteItem).
 		Commit()
 	if err != nil {
-		return err
+		return xerrors.Errorf("etcd client operation error %w:", err)
 	}
 	if !deleteResp.Succeeded {
 		return ErrNotFound

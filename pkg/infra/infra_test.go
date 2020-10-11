@@ -3,6 +3,8 @@ package infra
 import (
 	"context"
 	"os"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -90,8 +92,9 @@ func Test_doGet(t *testing.T) {
 			if err != tc.expectedErr {
 				t.Errorf("Error type is invalid. Expected: %v, Actual: %v", tc.expectedErr, err)
 			}
-			if actual != tc.expected {
-				t.Errorf("Obtained value is invalid. Expected: %s, Actual: %s", tc.expected, actual)
+			actualValue := string(actual)
+			if actualValue != tc.expected {
+				t.Errorf("Obtained value is invalid. Expected: %#v, Actual: %#v", tc.expected, actualValue)
 			}
 		})
 	}
@@ -127,15 +130,64 @@ func Test_doGetWithRev(t *testing.T) {
 			for i = 0; i < tc.expectedRevision; i++ {
 				setUpTest(ctx, t, client, tc.fixtures)
 			}
-			actualValue, actualRev, err := doGetWithRev(ctx, client, tc.key)
+			actual, actualRev, err := doGetWithRev(ctx, client, tc.key)
 			if err != tc.expectedErr {
 				t.Errorf("Error type is invalid. Expected: %v, Actual: %v", tc.expectedErr, err)
 			}
 			if (actualRev - initRev) != tc.expectedRevision {
 				t.Errorf("Obtained revision is invalid. Expected: %d, Actual: %d", tc.expectedRevision, actualRev)
 			}
+			actualValue := string(actual)
 			if actualValue != tc.expected {
-				t.Errorf("Obtained value is invalid. Expected: %s, Actual: %s", tc.expected, actualValue)
+				t.Errorf("Obtained value is invalid. Expected: %#v, Actual: %#v", tc.expected, actualValue)
+			}
+		})
+	}
+}
+
+func Test_doGetAll(t *testing.T) {
+	testCases := map[string]struct {
+		fixtures    testFixtures
+		key         string
+		expected    []string
+		expectedErr error
+	}{
+		"get an item": {
+			fixtures:    testFixtures{"key": "value"},
+			key:         "key",
+			expected:    []string{"value"},
+			expectedErr: nil,
+		},
+		"get multiple item": {
+			fixtures:    testFixtures{"key": "value", "key/key1": "value1", "key/key2": "value2"},
+			key:         "key",
+			expected:    []string{"value", "value1", "value2"},
+			expectedErr: nil,
+		},
+		"not found": {
+			key:         "key",
+			expected:    []string(nil),
+			expectedErr: nil,
+		},
+	}
+	for tn, tc := range testCases {
+		ctx := context.Background()
+		t.Run(tn, func(t *testing.T) {
+			client := getTestClient(t)
+			setUpTest(ctx, t, client, tc.fixtures)
+			defer tearDownTest(ctx, t, client, tc.fixtures)
+			values, err := doGetAll(ctx, client, tc.key)
+			if err != tc.expectedErr {
+				t.Errorf("Error type is invalid. Expected: %v, Actual: %v", tc.expectedErr, err)
+			}
+			var stringValues []string
+			for _, v := range values {
+				stringValues = append(stringValues, string(v))
+			}
+			sort.Strings(stringValues)
+			sort.Strings(tc.expected)
+			if !reflect.DeepEqual(stringValues, tc.expected) {
+				t.Errorf("Obtained value is invalid. Expected: %#v, Actual: %#v", tc.expected, stringValues)
 			}
 		})
 	}
