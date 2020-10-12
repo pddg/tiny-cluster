@@ -18,7 +18,7 @@ type machineRepoImpl struct {
 }
 
 func (m *machineRepoImpl) getKey(machine *models.Machine) string {
-	return path.Join(machinePrefix, machine.ID)
+	return path.Join(machinePrefix, machine.MAC)
 }
 
 func (m *machineRepoImpl) GetMachines(ctx context.Context) ([]*models.Machine, error) {

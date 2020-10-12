@@ -19,7 +19,7 @@ type Machine struct {
 	// IPv4Addr is a IPv4 address of this host.
 	IPv4Addr string
 	// DeployedDate is a UNIX time of the date when this host is deployed.
-	DeployedDate int
+	DeployedDate int64
 	// Spec indicates the machine spec of the host.
 	Spec MachineSpec
 }
