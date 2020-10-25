@@ -8,9 +8,13 @@ import (
 	"github.com/pddg/tiny-cluster/pkg/repositories"
 )
 
+// MachineUsecase is the interface to manipulate the machine data.
 type MachineUsecase interface {
+	// GetAllMachines returns all machines.
 	GetAllMachines(ctx context.Context) ([]*models.Machine, error)
+	// GetMachineByName returns the machine whose name is matched with the given name.
 	GetMachineByName(ctx context.Context, name string) (*models.Machine, error)
+	// GetMachineByQuery returns the machine which is filtered by given query.
 	GetMachineByQuery(ctx context.Context, query *MachineQuery) ([]*models.Machine, error)
 }
 

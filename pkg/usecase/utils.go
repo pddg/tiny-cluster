@@ -4,6 +4,7 @@ import (
 	"github.com/pddg/tiny-cluster/pkg/models"
 )
 
+// MachineQuery indicate that the query to filter the machine instance.
 type MachineQuery map[string]string
 
 func (q MachineQuery) Match(machine *models.Machine) bool {

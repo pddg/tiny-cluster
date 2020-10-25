@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	fixtures = []*models.Machine{
+	machineFixtures = []*models.Machine{
 		{
 			Name:         "machine1",
 			MAC:          "mac1",
@@ -19,6 +19,17 @@ var (
 				Core:   4,
 				Memory: 2048,
 				Disk:   128,
+			},
+		},
+		{
+			Name:         "machine2",
+			MAC:          "mac2",
+			IPv4Addr:     "19.168.1.2",
+			DeployedDate: time.Date(2020, 10, 2, 0, 0, 0, 0, time.UTC).Unix(),
+			Spec: models.MachineSpec{
+				Core:   2,
+				Memory: 1024,
+				Disk:   64,
 			},
 		},
 	}
@@ -31,31 +42,31 @@ func Test_MachineQueryMatch(t *testing.T) {
 		expect bool
 	}{
 		"match by name": {
-			target: fixtures[0],
-			query:  &usecase.MachineQuery{"name": fixtures[0].Name},
+			target: machineFixtures[0],
+			query:  &usecase.MachineQuery{"name": machineFixtures[0].Name},
 			expect: true,
 		},
 		"match by ipv4 addr": {
-			target: fixtures[0],
-			query:  &usecase.MachineQuery{"ipv4": fixtures[0].IPv4Addr},
+			target: machineFixtures[0],
+			query:  &usecase.MachineQuery{"ipv4": machineFixtures[0].IPv4Addr},
 			expect: true,
 		},
 		"match by mac": {
-			target: fixtures[0],
-			query:  &usecase.MachineQuery{"mac": fixtures[0].MAC},
+			target: machineFixtures[0],
+			query:  &usecase.MachineQuery{"mac": machineFixtures[0].MAC},
 			expect: true,
 		},
 		"match by name and addr and mac": {
-			target: fixtures[0],
+			target: machineFixtures[0],
 			query: &usecase.MachineQuery{
-				"mac":  fixtures[0].MAC,
-				"name": fixtures[0].Name,
-				"ipv4": fixtures[0].IPv4Addr,
+				"mac":  machineFixtures[0].MAC,
+				"name": machineFixtures[0].Name,
+				"ipv4": machineFixtures[0].IPv4Addr,
 			},
 			expect: true,
 		},
 		"do not match": {
-			target: fixtures[0],
+			target: machineFixtures[0],
 			query: &usecase.MachineQuery{
 				"mac":  "don't match",
 				"name": "don't match",
