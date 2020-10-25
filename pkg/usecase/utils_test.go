@@ -65,6 +65,25 @@ func Test_MachineQueryMatch(t *testing.T) {
 			},
 			expect: true,
 		},
+		"only name is matched (and)": {
+			target: machineFixtures[0],
+			query: &usecase.MachineQuery{
+				"mac":  "not found",
+				"name": machineFixtures[0].Name,
+				"ipv4": "not found",
+			},
+			expect: false,
+		},
+		"only name is matched (or)": {
+			target: machineFixtures[0],
+			query: &usecase.MachineQuery{
+				"mac":  "not found",
+				"name": machineFixtures[0].Name,
+				"ipv4": "not found",
+				"and":  "false",
+			},
+			expect: true,
+		},
 		"do not match": {
 			target: machineFixtures[0],
 			query: &usecase.MachineQuery{
