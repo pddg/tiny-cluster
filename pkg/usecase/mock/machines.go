@@ -79,3 +79,17 @@ func (mr *MockMachineUsecaseMockRecorder) GetMachineByQuery(ctx, query interface
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMachineByQuery", reflect.TypeOf((*MockMachineUsecase)(nil).GetMachineByQuery), ctx, query)
 }
+
+// RegisterOrUpdateMachine mocks base method
+func (m *MockMachineUsecase) RegisterOrUpdateMachine(ctx context.Context, machine *models.Machine) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegisterOrUpdateMachine", ctx, machine)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RegisterOrUpdateMachine indicates an expected call of RegisterOrUpdateMachine
+func (mr *MockMachineUsecaseMockRecorder) RegisterOrUpdateMachine(ctx, machine interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterOrUpdateMachine", reflect.TypeOf((*MockMachineUsecase)(nil).RegisterOrUpdateMachine), ctx, machine)
+}

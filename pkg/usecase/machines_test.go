@@ -152,7 +152,7 @@ func Test_machineUseCaseImpl_GetMachineByQuery(t *testing.T) {
 			fixtures:   machineFixtures,
 			errFixture: nil,
 			query:      &usecase.MachineQuery{"mac": "not found"},
-			expect:     []*models.Machine{},
+			expect:     []*models.Machine{nil},
 			expectErr:  nil,
 		},
 		"complex query (match)": {
@@ -178,10 +178,10 @@ func Test_machineUseCaseImpl_GetMachineByQuery(t *testing.T) {
 			expectErr: nil,
 		},
 		"query empty machines": {
-			fixtures:   []*models.Machine{},
+			fixtures:   []*models.Machine{nil},
 			errFixture: nil,
 			query:      &usecase.MachineQuery{"name": machineFixtures[0].Name},
-			expect:     []*models.Machine{},
+			expect:     []*models.Machine{nil},
 			expectErr:  nil,
 		},
 		"error": {
@@ -205,6 +205,49 @@ func Test_machineUseCaseImpl_GetMachineByQuery(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(actual, tc.expect) {
+				t.Errorf("Invalid response. Expected: %#v, Actual: %#v", actual, tc.expect)
+			}
+		})
+	}
+}
+
+func Test_machineUseCaseImpl_RegisterOrUpdateMachine(t *testing.T) {
+	sampleErr := xerrors.Errorf("Sample error")
+	testCases := map[string]struct {
+		fixtures   []*models.Machine
+		errFixture error
+		machine    *models.Machine
+		expect     error
+	}{
+		"register normally": {
+			fixtures:   []*models.Machine{},
+			errFixture: nil,
+			machine:    machineFixtures[0],
+			expect:     nil,
+		},
+		"update normally": {
+			fixtures:   machineFixtures,
+			errFixture: nil,
+			machine:    machineFixtures[0],
+			expect:     nil,
+		},
+		"error": {
+			fixtures:   machineFixtures,
+			errFixture: sampleErr,
+			machine:    machineFixtures[0],
+			expect:     sampleErr,
+		},
+	}
+	ctx := context.TODO()
+	ctrl := gomock.NewController(t)
+	for tn, tc := range testCases {
+		t.Run(tn, func(t *testing.T) {
+			t.Parallel()
+			repoMock := mock.NewMockMachineRepository(ctrl)
+			repoMock.EXPECT().GetMachines(ctx).Return(tc.fixtures, tc.errFixture)
+			machineUseCase := usecase.NewMachineUseCase(repoMock)
+			actual := machineUseCase.RegisterOrUpdateMachine(ctx, tc.machine)
+			if actual != tc.expect {
 				t.Errorf("Invalid response. Expected: %#v, Actual: %#v", actual, tc.expect)
 			}
 		})

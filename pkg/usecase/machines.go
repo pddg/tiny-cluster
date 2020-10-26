@@ -16,6 +16,8 @@ type MachineUsecase interface {
 	GetMachineByName(ctx context.Context, name string) (*models.Machine, error)
 	// GetMachineByQuery returns the machine which is filtered by given query.
 	GetMachineByQuery(ctx context.Context, query *MachineQuery) ([]*models.Machine, error)
+	// RegisterMachine register the machine if it has not been registered.
+	RegisterOrUpdateMachine(ctx context.Context, machine *models.Machine) error
 }
 
 type machineUseCaseImpl struct {
@@ -50,6 +52,23 @@ func (m *machineUseCaseImpl) GetMachineByQuery(ctx context.Context, query *Machi
 		}
 	}
 	return matchedMachines, nil
+}
+
+func (m *machineUseCaseImpl) RegisterOrUpdateMachine(ctx context.Context, machine *models.Machine) error {
+	query := &MachineQuery{
+		"name": machine.Name,
+		"ipv4": machine.IPv4Addr,
+		"mac":  machine.MAC,
+		"and":  "false",
+	}
+	existsMachines, err := m.GetMachineByQuery(ctx, query)
+	if err != nil {
+		return err
+	}
+	if len(existsMachines) != 0 {
+		return m.repo.UpdateMachine(ctx, machine)
+	}
+	return m.repo.RegisterMachine(ctx, machine)
 }
 
 func NewMachineUseCase(repo repositories.MachineRepository) MachineUsecase {
