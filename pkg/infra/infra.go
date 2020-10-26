@@ -2,25 +2,22 @@ package infra
 
 import (
 	"context"
+	"time"
 
 	"go.etcd.io/etcd/clientv3"
 	"golang.org/x/xerrors"
+
+	tcErr "github.com/pddg/tiny-cluster/pkg/errors"
 )
 
 const BasePrefix = "/tiny-cluster"
-
-var (
-	ErrTimedOut      = xerrors.New("Operation timed out")
-	ErrNotFound      = xerrors.New("The item was not found")
-	ErrAlreadyExists = xerrors.New("The item has already been exist")
-)
 
 type baseRepoImpl struct {
 	config *clientv3.Config
 }
 
 func (r *baseRepoImpl) newClient(ctx context.Context) (*clientv3.Client, error) {
-	timeoutCtx, cancel := context.WithTimeout(ctx, 30)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	errCh := make(chan error, 1)
 	clientCh := make(chan *clientv3.Client)
@@ -36,7 +33,7 @@ func (r *baseRepoImpl) newClient(ctx context.Context) (*clientv3.Client, error) 
 	}()
 	select {
 	case <-timeoutCtx.Done():
-		return nil, ErrTimedOut
+		return nil, tcErr.ErrTimedOut
 	case err := <-errCh:
 		return nil, xerrors.Errorf("Could not create etcd client %w:", err)
 	case client := <-clientCh:
@@ -51,7 +48,7 @@ func doGetWithRev(ctx context.Context, client *clientv3.Client, key string, opts
 		return value, 0, xerrors.Errorf("Failed to get the key ('%s') %w:", key, err)
 	}
 	if resp.Count == 0 {
-		return value, 0, ErrNotFound
+		return value, 0, tcErr.ErrNotFound
 	}
 	value = resp.Kvs[0].Value
 	return value, resp.Kvs[0].ModRevision, nil
@@ -89,7 +86,7 @@ func doCreate(ctx context.Context, client *clientv3.Client, key string, value st
 		return xerrors.Errorf("etcd client operation error %w:", err)
 	}
 	if !createResp.Succeeded {
-		return ErrAlreadyExists
+		return tcErr.ErrAlreadyExists
 	}
 	return nil
 }
@@ -108,7 +105,7 @@ RETRY:
 		return xerrors.Errorf("etcd client operation error %w:", err)
 	}
 	if !updateResp.Succeeded {
-		return ErrNotFound
+		return tcErr.ErrNotFound
 	}
 	// the item has been updated
 	txnResp := updateResp.Responses[0].GetResponseTxn()
@@ -134,7 +131,7 @@ func doDelete(ctx context.Context, client *clientv3.Client, key string) error {
 		return xerrors.Errorf("etcd client operation error %w:", err)
 	}
 	if !deleteResp.Succeeded {
-		return ErrNotFound
+		return tcErr.ErrNotFound
 	}
 	return nil
 }

@@ -10,13 +10,59 @@ import (
 	"time"
 
 	"go.etcd.io/etcd/clientv3"
+
+	tcErr "github.com/pddg/tiny-cluster/pkg/errors"
 )
+
+type testFixture interface {
+	prepare(ctx context.Context, t *testing.T, client *clientv3.Client)
+	clean(ctx context.Context, t *testing.T, client *clientv3.Client)
+}
 
 const testEtcdEndpointsKey = "TC_ETCD_ENDPOINTS"
 
-type testFixtures map[string]string
+func getTestEndpoints(t *testing.T) []string {
+	t.Helper()
+	urlsStr := os.Getenv(testEtcdEndpointsKey)
+	if len(urlsStr) == 0 {
+		t.Errorf("%s does not specified", testEtcdEndpointsKey)
+	}
+	return strings.Split(urlsStr, ",")
+}
 
-func (f *testFixtures) prepare(ctx context.Context, t *testing.T, client *clientv3.Client) {
+func getTestClient(t *testing.T) *clientv3.Client {
+	t.Helper()
+	urls := getTestEndpoints(t)
+	client, err := clientv3.NewFromURLs(urls)
+	if err != nil {
+		t.Errorf("failed to get client due to %v", err)
+	}
+	return client
+}
+
+func setUpTest(ctx context.Context, t *testing.T, client *clientv3.Client, fixtures testFixture) {
+	t.Helper()
+	if fixtures == nil {
+		return
+	}
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	fixtures.prepare(timeoutCtx, t, client)
+}
+
+func tearDownTest(ctx context.Context, t *testing.T, client *clientv3.Client, fixtures testFixture) {
+	t.Helper()
+	if fixtures == nil {
+		return
+	}
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	fixtures.clean(timeoutCtx, t, client)
+}
+
+type testFixtureImpl map[string]string
+
+func (f *testFixtureImpl) prepare(ctx context.Context, t *testing.T, client *clientv3.Client) {
 	t.Helper()
 	for k, v := range *f {
 		_, err := client.Put(ctx, k, v)
@@ -26,60 +72,33 @@ func (f *testFixtures) prepare(ctx context.Context, t *testing.T, client *client
 	}
 }
 
-func (f *testFixtures) clean(ctx context.Context, t *testing.T, client *clientv3.Client) error {
+func (f *testFixtureImpl) clean(ctx context.Context, t *testing.T, client *clientv3.Client) {
+	t.Helper()
 	for k := range *f {
 		_, err := client.Delete(ctx, k)
 		if err != nil {
-			return err
+			t.Errorf("Failed to delete value due to %v", err)
 		}
 	}
-	return nil
-}
-
-func getTestClient(t *testing.T) *clientv3.Client {
-	t.Helper()
-	urlsStr := os.Getenv(testEtcdEndpointsKey)
-	if len(urlsStr) == 0 {
-		t.Errorf("%s does not specified", testEtcdEndpointsKey)
-	}
-	urls := strings.Split(urlsStr, ",")
-	client, err := clientv3.NewFromURLs(urls)
-	if err != nil {
-		t.Errorf("failed to get client due to %v", err)
-	}
-	return client
-}
-
-func setUpTest(ctx context.Context, t *testing.T, client *clientv3.Client, fixtures testFixtures) {
-	t.Helper()
-	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	fixtures.prepare(timeoutCtx, t, client)
-}
-
-func tearDownTest(ctx context.Context, t *testing.T, client *clientv3.Client, fixtures testFixtures) {
-	t.Helper()
-	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	fixtures.clean(timeoutCtx, t, client)
 }
 
 func Test_doGet(t *testing.T) {
 	testCases := map[string]struct {
-		fixtures    testFixtures
+		fixtures    *testFixtureImpl
 		key         string
 		expected    string
 		expectedErr error
 	}{
 		"get exists value": {
-			fixtures:    testFixtures{"key": "value"},
+			fixtures:    &testFixtureImpl{"key": "value"},
 			key:         "key",
 			expected:    "value",
 			expectedErr: nil,
 		},
 		"not found": {
+			fixtures:    &testFixtureImpl{},
 			key:         "notfound",
-			expectedErr: ErrNotFound,
+			expectedErr: tcErr.ErrNotFound,
 		},
 	}
 	for tn, tc := range testCases {
@@ -102,14 +121,14 @@ func Test_doGet(t *testing.T) {
 
 func Test_doGetWithRev(t *testing.T) {
 	testCases := map[string]struct {
-		fixtures         testFixtures
+		fixtures         *testFixtureImpl
 		key              string
 		expected         string
 		expectedRevision int64
 		expectedErr      error
 	}{
 		"get exists value with revision": {
-			fixtures:         testFixtures{"key": "value"},
+			fixtures:         &testFixtureImpl{"key": "value"},
 			key:              "key",
 			expected:         "value",
 			expectedRevision: 3,
@@ -147,24 +166,25 @@ func Test_doGetWithRev(t *testing.T) {
 
 func Test_doGetAll(t *testing.T) {
 	testCases := map[string]struct {
-		fixtures    testFixtures
+		fixtures    *testFixtureImpl
 		key         string
 		expected    []string
 		expectedErr error
 	}{
 		"get an item": {
-			fixtures:    testFixtures{"key": "value"},
+			fixtures:    &testFixtureImpl{"key": "value"},
 			key:         "key",
 			expected:    []string{"value"},
 			expectedErr: nil,
 		},
 		"get multiple item": {
-			fixtures:    testFixtures{"key": "value", "key/key1": "value1", "key/key2": "value2"},
+			fixtures:    &testFixtureImpl{"key": "value", "key/key1": "value1", "key/key2": "value2"},
 			key:         "key",
 			expected:    []string{"value", "value1", "value2"},
 			expectedErr: nil,
 		},
 		"not found": {
+			fixtures:    &testFixtureImpl{},
 			key:         "key",
 			expected:    []string(nil),
 			expectedErr: nil,
@@ -195,21 +215,22 @@ func Test_doGetAll(t *testing.T) {
 
 func Test_doCreate(t *testing.T) {
 	testCases := map[string]struct {
-		fixtures    testFixtures
+		fixtures    *testFixtureImpl
 		key         string
 		expected    string
 		expectedErr error
 	}{
 		"create new item": {
+			fixtures:    &testFixtureImpl{},
 			key:         "key",
 			expected:    "value",
 			expectedErr: nil,
 		},
 		"create exists item": {
-			fixtures:    testFixtures{"key": "value"},
+			fixtures:    &testFixtureImpl{"key": "value"},
 			key:         "key",
 			expected:    "value",
-			expectedErr: ErrAlreadyExists,
+			expectedErr: tcErr.ErrAlreadyExists,
 		},
 	}
 	for tn, tc := range testCases {
@@ -228,7 +249,7 @@ func Test_doCreate(t *testing.T) {
 
 func Test_doUpdate(t *testing.T) {
 	testCases := map[string]struct {
-		fixtures        testFixtures
+		fixtures        *testFixtureImpl
 		key             string
 		delBeforeUpdate bool
 		putBeforeUpdate bool
@@ -236,7 +257,7 @@ func Test_doUpdate(t *testing.T) {
 		expectedErr     error
 	}{
 		"update successfully": {
-			fixtures:        testFixtures{"key": "value"},
+			fixtures:        &testFixtureImpl{"key": "value"},
 			key:             "key",
 			delBeforeUpdate: false,
 			putBeforeUpdate: false,
@@ -244,7 +265,7 @@ func Test_doUpdate(t *testing.T) {
 			expectedErr:     nil,
 		},
 		"update retry": {
-			fixtures:        testFixtures{"key": "value"},
+			fixtures:        &testFixtureImpl{"key": "value"},
 			key:             "key",
 			delBeforeUpdate: false,
 			putBeforeUpdate: true,
@@ -252,12 +273,12 @@ func Test_doUpdate(t *testing.T) {
 			expectedErr:     nil,
 		},
 		"delete before update": {
-			fixtures:        testFixtures{"key": "value"},
+			fixtures:        &testFixtureImpl{"key": "value"},
 			key:             "key",
 			delBeforeUpdate: true,
 			putBeforeUpdate: false,
 			expected:        "value",
-			expectedErr:     ErrNotFound,
+			expectedErr:     tcErr.ErrNotFound,
 		},
 	}
 	for tn, tc := range testCases {
@@ -291,18 +312,19 @@ func Test_doUpdate(t *testing.T) {
 
 func Test_doDelete(t *testing.T) {
 	testCases := map[string]struct {
-		fixtures    testFixtures
+		fixtures    *testFixtureImpl
 		key         string
 		expectedErr error
 	}{
 		"delete exist item": {
-			fixtures:    testFixtures{"key": "value"},
+			fixtures:    &testFixtureImpl{"key": "value"},
 			key:         "key",
 			expectedErr: nil,
 		},
 		"delete item which does not exist": {
+			fixtures:    &testFixtureImpl{},
 			key:         "key",
-			expectedErr: ErrNotFound,
+			expectedErr: tcErr.ErrNotFound,
 		},
 	}
 	for tn, tc := range testCases {

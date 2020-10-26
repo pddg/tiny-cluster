@@ -63,6 +63,20 @@ func (mr *MockMachineRepositoryMockRecorder) RegisterMachine(ctx, machine interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterMachine", reflect.TypeOf((*MockMachineRepository)(nil).RegisterMachine), ctx, machine)
 }
 
+// UpdateMachine mocks base method
+func (m *MockMachineRepository) UpdateMachine(ctx context.Context, machine *models.Machine) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMachine", ctx, machine)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMachine indicates an expected call of UpdateMachine
+func (mr *MockMachineRepositoryMockRecorder) UpdateMachine(ctx, machine interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMachine", reflect.TypeOf((*MockMachineRepository)(nil).UpdateMachine), ctx, machine)
+}
+
 // DeleteMachine mocks base method
 func (m *MockMachineRepository) DeleteMachine(ctx context.Context, machine *models.Machine) error {
 	m.ctrl.T.Helper()
