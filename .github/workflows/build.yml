@@ -35,6 +35,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-golangci-lint-${{ env.GOLANGCI_LINT_VERSION }}
 
+      - name: Check that go.mod and go.sum is up-to-date
+        run: |
+          go mod tidy
+          if [[ $(git diff --name-only | grep -E "go\.(sum|mod)" || echo -n "") != "" ]]; then \
+            echo "go.sum or go.mod is not updated."; \
+            exit 1; \
+          fi
+
+      - name: Generated mocks are up-to-date
+        run: |
+          make mock
+          if [[ $(git diff --name-only) != "" ]]; then \
+            echo "Generated mocks is not updated."; \
+            exit 1; \
+          fi
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
