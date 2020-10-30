@@ -1,3 +1,4 @@
+//go:generate mockgen -source=$GOFILE -destination=mock/$GOFILE -package=mock
 package repositories
 
 import (
@@ -14,6 +15,9 @@ type MachineRepository interface {
 	// RegisterMachine creates a record of the machine.
 	// This returns error when the item has been created.
 	RegisterMachine(ctx context.Context, machine *models.Machine) error
+	// UpdateMachine updates the record of the machine.
+	// This returns error when the item does not exist.
+	UpdateMachine(ctx context.Context, machine *models.Machine) error
 	// DeleteMachine deletes the record of the machine.
 	// This returns error when the item does not exist.
 	DeleteMachine(ctx context.Context, machine *models.Machine) error

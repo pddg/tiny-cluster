@@ -21,6 +21,6 @@ RUN make
 
 FROM scratch as prod
 
-COPY --from=build /opt/tiny-cluster/bin/ /usr/bin/
+COPY --from=build /opt/tiny-cluster/bin/ /usr/local/bin/
 
 CMD ["bootserver",  "start",  "-p", "8080"]
