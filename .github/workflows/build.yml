@@ -1,0 +1,70 @@
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - main
+  pull_request:
+
+env:
+  GO_VERSION: 1.15
+  GOLANGCI_LINT_VERSION: v1.32 
+
+jobs:
+  lint:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg
+          key: ${{ runner.os }}-gopkg-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-gopkg-${{ env.GO_VERSION }}
+            ${{ runner.os }}-gopkg-
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/golangci-lint
+          key: ${{ runner.os }}-golangci-lint-${{ env.GOLANGCI_LINT_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-golangci-lint-${{ env.GOLANGCI_LINT_VERSION }}
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg
+          key: ${{ runner.os }}-gopkg-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-gopkg-${{ env.GO_VERSION }}
+            ${{ runner.os }}-gopkg-
+
+      - name: Start etcd daemon
+        run: |
+          docker-compose up -d etcd
+
+      - name: Build all commands
+        run: |
+          make
+
+      - name: Test
+        run: |
+          make test
