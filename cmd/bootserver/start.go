@@ -20,7 +20,7 @@ func newStartCommand() *cobra.Command {
 	startCmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start server",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if _, err := os.Stat(bootFileDir); err != nil {
 				log.Fatalf("%s does not exist.", bootFileDir)
 			}
@@ -31,7 +31,7 @@ func newStartCommand() *cobra.Command {
 			e.GET("/default.ipxe", boot.IPXEScriptHandler)
 			e.Static("/boot", bootFileDir)
 
-			e.Start(fmt.Sprintf(":%d", listenPort))
+			return e.Start(fmt.Sprintf(":%d", listenPort))
 		},
 	}
 	startCmd.Flags().IntVarP(&listenPort, "port", "p", 8080, "Listen port number")
