@@ -119,6 +119,7 @@ func Test_machineUseCaseImpl_GetAllMachines(t *testing.T) {
 }
 
 func Test_machineUseCaseImpl_GetMachineByQuery(t *testing.T) {
+	var emptyMachines []*models.Machine
 	sampleErr := xerrors.Errorf("Sample error")
 	testCases := map[string]struct {
 		fixtures   []*models.Machine
@@ -152,7 +153,7 @@ func Test_machineUseCaseImpl_GetMachineByQuery(t *testing.T) {
 			fixtures:   machineFixtures,
 			errFixture: nil,
 			query:      &usecase.MachineQuery{"mac": "not found"},
-			expect:     []*models.Machine{nil},
+			expect:     emptyMachines,
 			expectErr:  nil,
 		},
 		"complex query (match)": {
@@ -178,10 +179,10 @@ func Test_machineUseCaseImpl_GetMachineByQuery(t *testing.T) {
 			expectErr: nil,
 		},
 		"query empty machines": {
-			fixtures:   []*models.Machine{nil},
+			fixtures:   []*models.Machine{},
 			errFixture: nil,
 			query:      &usecase.MachineQuery{"name": machineFixtures[0].Name},
-			expect:     []*models.Machine{nil},
+			expect:     emptyMachines,
 			expectErr:  nil,
 		},
 		"error": {
@@ -216,24 +217,28 @@ func Test_machineUseCaseImpl_RegisterOrUpdateMachine(t *testing.T) {
 	testCases := map[string]struct {
 		fixtures   []*models.Machine
 		errFixture error
+		isUpdate bool
 		machine    *models.Machine
 		expect     error
 	}{
 		"register normally": {
 			fixtures:   []*models.Machine{},
 			errFixture: nil,
+			isUpdate: false,
 			machine:    machineFixtures[0],
 			expect:     nil,
 		},
 		"update normally": {
 			fixtures:   machineFixtures,
 			errFixture: nil,
+			isUpdate: true,
 			machine:    machineFixtures[0],
 			expect:     nil,
 		},
 		"error": {
 			fixtures:   machineFixtures,
 			errFixture: sampleErr,
+			isUpdate: false,
 			machine:    machineFixtures[0],
 			expect:     sampleErr,
 		},
@@ -245,6 +250,11 @@ func Test_machineUseCaseImpl_RegisterOrUpdateMachine(t *testing.T) {
 			t.Parallel()
 			repoMock := mock.NewMockMachineRepository(ctrl)
 			repoMock.EXPECT().GetMachines(ctx).Return(tc.fixtures, tc.errFixture)
+			if tc.isUpdate {
+				repoMock.EXPECT().UpdateMachine(ctx, tc.machine).Return(tc.errFixture)
+			} else {
+				repoMock.EXPECT().RegisterMachine(ctx, tc.machine).Return(tc.errFixture)
+			}
 			machineUseCase := usecase.NewMachineUseCase(repoMock)
 			actual := machineUseCase.RegisterOrUpdateMachine(ctx, tc.machine)
 			if actual != tc.expect {

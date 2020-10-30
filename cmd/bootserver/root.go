@@ -8,8 +8,8 @@ func newRootComand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "bootserver",
 		Short: "Run boot server",
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 }

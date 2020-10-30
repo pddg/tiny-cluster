@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 GO=go
-GO_BUILD_OPT=
+GO_BUILD_OPT=-mod=readonly
 GO_LIB_SRCS=$(wildcard pkg/*/*.go)
 
 CMD_DIRS=$(wildcard cmd/*)
