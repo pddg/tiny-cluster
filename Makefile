@@ -38,6 +38,8 @@ GO_PB_SRCS=$(join $(GO_PB_DIR)/,$(patsubst %.proto,%.pb.go,$(notdir $(PROTO_SRCS
 
 TC_ETCD_ENDPOINTS ?= http://127.0.0.1:2379
 
+.DEFAULT_GOAL=all
+
 $(PROTOC_GEN_GO) $(MOCKGEN): tools.go
 	go generate ./$<
 
@@ -67,7 +69,7 @@ bin/%: $$(wildcard cmd/$$*/*.go) $(GO_LIB_SRCS) go.mod bin
 	$(GO) build $(GO_BUILD_OPT) -o $@ ./cmd/$*
 
 .PHONY: all
-all: $(CMDS)
+all: mock pb $(CMDS)
 
 .PHONY: clean
 clean:
