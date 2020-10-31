@@ -8,6 +8,7 @@ on:
 
 env:
   GO_VERSION: 1.15
+  GEX_VERSION: v0.6.1
   PROTOC_VERSION: 3.13.0
   GOLANGCI_LINT_VERSION: v1.32 
 
@@ -56,6 +57,19 @@ jobs:
         if: steps.cache-gomod.outputs.cache-hit != 'true'
         run: |
           go mod download
+
+      - uses: actions/cache@v2
+        id: cache-gobin
+        with:
+          path: ~/go/bin
+          key: ${{ runner.os }}-gobin-${{ env.GEX_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-gobin-${{ env.GEX_VERSION }}
+
+      - name: Download and build gex
+        if: steps.cache-gobin.outputs.cache-hit != 'true'
+        run: |
+          cd /tmp && go get github.com/izumin5210/gex/cmd/gex@${{ env.GEX_VERSION }}
 
       - uses: actions/cache@v2
         with:
