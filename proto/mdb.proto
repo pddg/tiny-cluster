@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package tiny_cluster.mdb;
+
+option go_package = "github.com/pddg/tiny-cluster/pkg/api/pb";
+
+message MachineSpec {
+    int32 memory = 1;
+    int32 disk = 2;
+    int32 core = 3;
+}
+
+message Machine {
+    string mac = 1;
+    string name = 2;
+    string ipv4addr = 3;
+    int64 deployed_date = 4;
+    MachineSpec spec = 5;
+}
+
+message GetMachinesRequest {
+    message QueryItem {
+        string key = 1;
+        string value = 2;
+    }
+    repeated QueryItem queries = 1;
+}
+
+message GetMachinesResponse {
+    repeated Machine machines = 1;
+}
+
+message RegisterOrUpdateMachineRequest {
+    Machine machine = 1;
+}
+
+message RegisterOrUpdateMachineResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message DeleteMachineRequest {
+    Machine machine = 1;
+    bool force = 2;
+}
+
+message DeleteMachineResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+service MachineDatabase {
+    rpc GetMachines (GetMachinesRequest) returns (GetMachinesResponse);
+    rpc RegisterOrUpdateMachine (RegisterOrUpdateMachineRequest) returns (RegisterOrUpdateMachineResponse);
+    rpc DeleteMachine (DeleteMachineRequest) returns (DeleteMachineResponse);
+}
