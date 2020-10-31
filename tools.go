@@ -7,9 +7,11 @@ package tools
 // tool dependencies
 import (
 	_ "github.com/golang/mock/mockgen"
+	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
 )
 
 // If you want to use tools, please run the following command:
 //  go generate ./tools.go
 //
 //go:generate go build -v -o=./bin/mockgen github.com/golang/mock/mockgen
+//go:generate go build -v -o=./bin/protoc-gen-go google.golang.org/protobuf/cmd/protoc-gen-go
