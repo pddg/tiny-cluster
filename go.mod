@@ -11,6 +11,7 @@ require (
 	github.com/golang/protobuf v1.4.2
 	github.com/google/go-cmp v0.5.1 // indirect
 	github.com/google/uuid v1.1.2 // indirect
+	github.com/izumin5210/gex v0.6.1
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/labstack/echo/v4 v4.1.17
 	github.com/spf13/cobra v1.1.1

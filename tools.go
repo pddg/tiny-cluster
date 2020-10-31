@@ -7,6 +7,7 @@ package tools
 // tool dependencies
 import (
 	_ "github.com/golang/mock/mockgen"
+	_ "github.com/izumin5210/gex/cmd/gex"
 	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
 )
 
@@ -14,4 +15,5 @@ import (
 //  go generate ./tools.go
 //
 //go:generate go build -v -o=./bin/mockgen github.com/golang/mock/mockgen
+//go:generate go build -v -o=./bin/gex github.com/izumin5210/gex/cmd/gex
 //go:generate go build -v -o=./bin/protoc-gen-go google.golang.org/protobuf/cmd/protoc-gen-go

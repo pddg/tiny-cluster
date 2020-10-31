@@ -8,7 +8,6 @@ on:
 
 env:
   GO_VERSION: 1.15
-  GEX_VERSION: v0.6.1
   PROTOC_VERSION: 3.13.0
   GOLANGCI_LINT_VERSION: v1.32 
 
@@ -61,15 +60,19 @@ jobs:
       - uses: actions/cache@v2
         id: cache-gobin
         with:
-          path: ~/go/bin
-          key: ${{ runner.os }}-gobin-${{ env.GEX_VERSION }}
+          path: bin/
+          key: ${{ runner.os }}-bin-${{ hashFiles('tools.go') }}
           restore-keys: |
-            ${{ runner.os }}-gobin-${{ env.GEX_VERSION }}
+            ${{ runner.os }}-bin-${{ hashFiles('tools.go') }}
 
-      - name: Download and build gex
+      - name: Download and build tools
         if: steps.cache-gobin.outputs.cache-hit != 'true'
         run: |
-          cd /tmp && go get github.com/izumin5210/gex/cmd/gex@${{ env.GEX_VERSION }}
+          go generate ./tools.go
+
+      - name: Add ./bin to path
+        run: |
+          echo "${PWD}/bin" >> $GITHUB_PATH
 
       - uses: actions/cache@v2
         with:
