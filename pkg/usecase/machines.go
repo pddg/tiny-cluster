@@ -18,6 +18,8 @@ type MachineUsecase interface {
 	GetMachineByQuery(ctx context.Context, query *MachineQuery) ([]*models.Machine, error)
 	// RegisterMachine register the machine if it has not been registered.
 	RegisterOrUpdateMachine(ctx context.Context, machine *models.Machine) error
+	// DeleteMachine delete the machine if it exists.
+	DeleteMachine(ctx context.Context, machine *models.Machine) error
 }
 
 type machineUseCaseImpl struct {
@@ -69,6 +71,10 @@ func (m *machineUseCaseImpl) RegisterOrUpdateMachine(ctx context.Context, machin
 		return m.repo.UpdateMachine(ctx, machine)
 	}
 	return m.repo.RegisterMachine(ctx, machine)
+}
+
+func (m *machineUseCaseImpl) DeleteMachine(ctx context.Context, machine *models.Machine) error {
+	return m.repo.DeleteMachine(ctx, machine)
 }
 
 func NewMachineUseCase(repo repositories.MachineRepository) MachineUsecase {

@@ -7,8 +7,6 @@ GO_LIB_SRCS=$(wildcard pkg/*/*.go)
 CMD_DIRS=$(wildcard cmd/*)
 CMDS=$(subst cmd,bin,$(CMD_DIRS))
 
-RM=rm
-
 GO_INTERFACE_SRCS=pkg/repositories/machines.go pkg/usecase/machines.go
 GO_MOCK_SRCS=$(join $(dir $(GO_INTERFACE_SRCS)),$(addprefix mock/,$(notdir $(GO_INTERFACE_SRCS))))
 
@@ -19,14 +17,16 @@ MOCKGEN=bin/mockgen
 PROTOC=bin/protoc
 PROTOC_VERSION=3.13.0
 ifeq "$(OS)" "Windows_NT"
+	RM=del
 	PROTOC_PKG=protoc-$(PROTOC_VERSION)-win64.zip
 else
+	RM=rm
     UNAME=$(shell uname -s)
-ifeq "$(UNAME)" "Linux"
-	PROTOC_PKG=protoc-$(PROTOC_VERSION)-linux-x86_64.zip
-else
-	PROTOC_PKG=protoc-$(PROTOC_VERSION)-osx-x86_64.zip
-endif
+	ifeq "$(UNAME)" "Linux"
+		PROTOC_PKG=protoc-$(PROTOC_VERSION)-linux-x86_64.zip
+	else
+		PROTOC_PKG=protoc-$(PROTOC_VERSION)-osx-x86_64.zip
+	endif
 endif
 
 PROTOC_DOWNLOAD_URL=https://github.com/protocolbuffers/protobuf/releases/download
@@ -86,10 +86,10 @@ mock: $(GO_MOCK_SRCS)
 .SECONDEXPANSION:
 %.pb.go: ./proto/$$(subst .pb.go,.proto,$$(notdir $$@)) $(PROTOC) $(PROTOC_GEN_GO)
 	$(PROTOC) \
-	--plugin=protoc-gen-go=$(PROTOC_GEN_GO) \
-	-I=$(dir $<) \
-	--go_opt=module=github.com/pddg/tiny-cluster \
-	--go_out=. \
+	-I $(dir $<) \
+	--plugin protoc-gen-go=$(PROTOC_GEN_GO) \
+	--go_opt paths=source_relative \
+	--go_out plugins=grpc:$(dir $@) \
 	$<
 
 .PHONY: pb

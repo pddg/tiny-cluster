@@ -7,7 +7,11 @@
 package pb
 
 import (
+	context "context"
 	proto "github.com/golang/protobuf/proto"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -30,8 +34,8 @@ type MachineSpec struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Memory int32 `protobuf:"varint,1,opt,name=memory,proto3" json:"memory,omitempty"`
-	Disk   int32 `protobuf:"varint,2,opt,name=disk,proto3" json:"disk,omitempty"`
+	Memory int64 `protobuf:"varint,1,opt,name=memory,proto3" json:"memory,omitempty"`
+	Disk   int64 `protobuf:"varint,2,opt,name=disk,proto3" json:"disk,omitempty"`
 	Core   int32 `protobuf:"varint,3,opt,name=core,proto3" json:"core,omitempty"`
 }
 
@@ -67,14 +71,14 @@ func (*MachineSpec) Descriptor() ([]byte, []int) {
 	return file_mdb_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *MachineSpec) GetMemory() int32 {
+func (x *MachineSpec) GetMemory() int64 {
 	if x != nil {
 		return x.Memory
 	}
 	return 0
 }
 
-func (x *MachineSpec) GetDisk() int32 {
+func (x *MachineSpec) GetDisk() int64 {
 	if x != nil {
 		return x.Disk
 	}
@@ -534,9 +538,9 @@ var file_mdb_proto_rawDesc = []byte{
 	0x0a, 0x09, 0x6d, 0x64, 0x62, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x10, 0x74, 0x69, 0x6e,
 	0x79, 0x5f, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x2e, 0x6d, 0x64, 0x62, 0x22, 0x4d, 0x0a,
 	0x0b, 0x4d, 0x61, 0x63, 0x68, 0x69, 0x6e, 0x65, 0x53, 0x70, 0x65, 0x63, 0x12, 0x16, 0x0a, 0x06,
-	0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x6d, 0x65,
+	0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x06, 0x6d, 0x65,
 	0x6d, 0x6f, 0x72, 0x79, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x69, 0x73, 0x6b, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x05, 0x52, 0x04, 0x64, 0x69, 0x73, 0x6b, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x6f, 0x72, 0x65,
+	0x28, 0x03, 0x52, 0x04, 0x64, 0x69, 0x73, 0x6b, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x6f, 0x72, 0x65,
 	0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x63, 0x6f, 0x72, 0x65, 0x22, 0xa3, 0x01, 0x0a,
 	0x07, 0x4d, 0x61, 0x63, 0x68, 0x69, 0x6e, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x6d, 0x61, 0x63, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6d, 0x61, 0x63, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61,
@@ -787,4 +791,156 @@ func file_mdb_proto_init() {
 	file_mdb_proto_rawDesc = nil
 	file_mdb_proto_goTypes = nil
 	file_mdb_proto_depIdxs = nil
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConnInterface
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion6
+
+// MachineDatabaseClient is the client API for MachineDatabase service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type MachineDatabaseClient interface {
+	GetMachines(ctx context.Context, in *GetMachinesRequest, opts ...grpc.CallOption) (*GetMachinesResponse, error)
+	RegisterOrUpdateMachine(ctx context.Context, in *RegisterOrUpdateMachineRequest, opts ...grpc.CallOption) (*RegisterOrUpdateMachineResponse, error)
+	DeleteMachine(ctx context.Context, in *DeleteMachineRequest, opts ...grpc.CallOption) (*DeleteMachineResponse, error)
+}
+
+type machineDatabaseClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewMachineDatabaseClient(cc grpc.ClientConnInterface) MachineDatabaseClient {
+	return &machineDatabaseClient{cc}
+}
+
+func (c *machineDatabaseClient) GetMachines(ctx context.Context, in *GetMachinesRequest, opts ...grpc.CallOption) (*GetMachinesResponse, error) {
+	out := new(GetMachinesResponse)
+	err := c.cc.Invoke(ctx, "/tiny_cluster.mdb.MachineDatabase/GetMachines", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *machineDatabaseClient) RegisterOrUpdateMachine(ctx context.Context, in *RegisterOrUpdateMachineRequest, opts ...grpc.CallOption) (*RegisterOrUpdateMachineResponse, error) {
+	out := new(RegisterOrUpdateMachineResponse)
+	err := c.cc.Invoke(ctx, "/tiny_cluster.mdb.MachineDatabase/RegisterOrUpdateMachine", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *machineDatabaseClient) DeleteMachine(ctx context.Context, in *DeleteMachineRequest, opts ...grpc.CallOption) (*DeleteMachineResponse, error) {
+	out := new(DeleteMachineResponse)
+	err := c.cc.Invoke(ctx, "/tiny_cluster.mdb.MachineDatabase/DeleteMachine", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// MachineDatabaseServer is the server API for MachineDatabase service.
+type MachineDatabaseServer interface {
+	GetMachines(context.Context, *GetMachinesRequest) (*GetMachinesResponse, error)
+	RegisterOrUpdateMachine(context.Context, *RegisterOrUpdateMachineRequest) (*RegisterOrUpdateMachineResponse, error)
+	DeleteMachine(context.Context, *DeleteMachineRequest) (*DeleteMachineResponse, error)
+}
+
+// UnimplementedMachineDatabaseServer can be embedded to have forward compatible implementations.
+type UnimplementedMachineDatabaseServer struct {
+}
+
+func (*UnimplementedMachineDatabaseServer) GetMachines(context.Context, *GetMachinesRequest) (*GetMachinesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMachines not implemented")
+}
+func (*UnimplementedMachineDatabaseServer) RegisterOrUpdateMachine(context.Context, *RegisterOrUpdateMachineRequest) (*RegisterOrUpdateMachineResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterOrUpdateMachine not implemented")
+}
+func (*UnimplementedMachineDatabaseServer) DeleteMachine(context.Context, *DeleteMachineRequest) (*DeleteMachineResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMachine not implemented")
+}
+
+func RegisterMachineDatabaseServer(s *grpc.Server, srv MachineDatabaseServer) {
+	s.RegisterService(&_MachineDatabase_serviceDesc, srv)
+}
+
+func _MachineDatabase_GetMachines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMachinesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MachineDatabaseServer).GetMachines(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tiny_cluster.mdb.MachineDatabase/GetMachines",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MachineDatabaseServer).GetMachines(ctx, req.(*GetMachinesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MachineDatabase_RegisterOrUpdateMachine_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterOrUpdateMachineRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MachineDatabaseServer).RegisterOrUpdateMachine(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tiny_cluster.mdb.MachineDatabase/RegisterOrUpdateMachine",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MachineDatabaseServer).RegisterOrUpdateMachine(ctx, req.(*RegisterOrUpdateMachineRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MachineDatabase_DeleteMachine_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMachineRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MachineDatabaseServer).DeleteMachine(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tiny_cluster.mdb.MachineDatabase/DeleteMachine",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MachineDatabaseServer).DeleteMachine(ctx, req.(*DeleteMachineRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _MachineDatabase_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "tiny_cluster.mdb.MachineDatabase",
+	HandlerType: (*MachineDatabaseServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetMachines",
+			Handler:    _MachineDatabase_GetMachines_Handler,
+		},
+		{
+			MethodName: "RegisterOrUpdateMachine",
+			Handler:    _MachineDatabase_RegisterOrUpdateMachine_Handler,
+		},
+		{
+			MethodName: "DeleteMachine",
+			Handler:    _MachineDatabase_DeleteMachine_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "mdb.proto",
 }
