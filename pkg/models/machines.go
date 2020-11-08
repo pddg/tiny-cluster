@@ -3,11 +3,11 @@ package models
 // MachineSpec is a spec of the host.
 type MachineSpec struct {
 	// Core is a number of CPU core.
-	Core int `json:"core"`
+	Core int32 `json:"core"`
 	// Memory is an amount of DRAM (MB).
-	Memory int `json:"memory"`
+	Memory int64 `json:"memory"`
 	// Disk is an amount of local disk (GB).
-	Disk int `json:"disk"`
+	Disk int64 `json:"disk"`
 }
 
 // Machine is a information of phisical host
