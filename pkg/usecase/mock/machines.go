@@ -93,3 +93,17 @@ func (mr *MockMachineUsecaseMockRecorder) RegisterOrUpdateMachine(ctx, machine i
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterOrUpdateMachine", reflect.TypeOf((*MockMachineUsecase)(nil).RegisterOrUpdateMachine), ctx, machine)
 }
+
+// DeleteMachine mocks base method
+func (m *MockMachineUsecase) DeleteMachine(ctx context.Context, machine *models.Machine) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMachine", ctx, machine)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteMachine indicates an expected call of DeleteMachine
+func (mr *MockMachineUsecaseMockRecorder) DeleteMachine(ctx, machine interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMachine", reflect.TypeOf((*MockMachineUsecase)(nil).DeleteMachine), ctx, machine)
+}

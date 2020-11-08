@@ -263,3 +263,46 @@ func Test_machineUseCaseImpl_RegisterOrUpdateMachine(t *testing.T) {
 		})
 	}
 }
+
+func Test_machineUseCaseImpl_DeleteMachine(t *testing.T) {
+	sampleErr := xerrors.Errorf("Sample error")
+	testCases := map[string]struct {
+		fixtures   []*models.Machine
+		errFixture error
+		machine    *models.Machine
+		expect     error
+	}{
+		"delete normally": {
+			fixtures:   machineFixtures,
+			errFixture: nil,
+			machine:    machineFixtures[0],
+			expect:     nil,
+		},
+		"does not exist": {
+			fixtures:   []*models.Machine{},
+			errFixture: nil,
+			machine:    machineFixtures[0],
+			expect:     nil,
+		},
+		"error": {
+			fixtures:   machineFixtures,
+			errFixture: sampleErr,
+			machine:    machineFixtures[0],
+			expect:     sampleErr,
+		},
+	}
+	ctx := context.TODO()
+	ctrl := gomock.NewController(t)
+	for tn, tc := range testCases {
+		t.Run(tn, func(t *testing.T) {
+			t.Parallel()
+			repoMock := mock.NewMockMachineRepository(ctrl)
+			repoMock.EXPECT().DeleteMachine(ctx, tc.machine).Return(tc.errFixture)
+			machineUseCase := usecase.NewMachineUseCase(repoMock)
+			actual := machineUseCase.DeleteMachine(ctx, tc.machine)
+			if actual != tc.expect {
+				t.Errorf("Invalid response. Expected: %#v, Actual: %#v", actual, tc.expect)
+			}
+		})
+	}
+}
